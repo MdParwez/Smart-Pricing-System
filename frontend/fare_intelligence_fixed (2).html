@@ -1,0 +1,625 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta http-equiv="Content-Type" content="text/html; charset=UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Airline Pricing Intelligence</title>
+<style>
+*{box-sizing:border-box;margin:0;padding:0}
+body{font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',sans-serif;background:#f5f7fb;color:#0f172a;min-height:100vh}
+::-webkit-scrollbar{width:4px;height:4px}
+::-webkit-scrollbar-track{background:#eef2f7}
+::-webkit-scrollbar-thumb{background:#7b8799;border-radius:2px}
+.sr-only{position:absolute;width:1px;height:1px;padding:0;margin:-1px;overflow:hidden;clip:rect(0,0,0,0);border:0}
+.dash{display:flex;min-height:100vh}
+.sidebar{width:200px;flex-shrink:0;background:#ffffff;border-right:1px solid #d7deea;display:flex;flex-direction:column;padding:16px 0}
+.logo{padding:0 16px 20px;border-bottom:1px solid #d7deea;margin-bottom:12px}
+.logo-text{font-size:13px;font-weight:600;color:#60a5fa;letter-spacing:.5px}
+.logo-sub{font-size:10px;color:#5b6678;margin-top:2px}
+.nav-item{display:flex;align-items:center;gap:10px;padding:9px 16px;font-size:12px;color:#3f4a5c;cursor:pointer;border-left:2px solid transparent;transition:all .15s}
+.nav-item:hover{color:#526177;background:#eef2f7}
+.nav-item.active{color:#60a5fa;border-left-color:#3b82f6;background:rgba(59,130,246,.08)}
+.nav-item i{font-size:16px}
+.nav-section{font-size:9px;font-weight:600;color:#7b8799;padding:12px 16px 4px;letter-spacing:1px;text-transform:uppercase}
+.main{flex:1;overflow-y:auto;background:#f5f7fb}
+.topbar{background:#ffffff;border-bottom:1px solid #d7deea;padding:10px 20px;display:flex;align-items:center;justify-content:space-between;position:sticky;top:0;z-index:50}
+.topbar-left{font-size:14px;font-weight:600;color:#0f172a}
+.topbar-sub{font-size:11px;color:#5b6678;margin-top:1px}
+.topbar-right{display:flex;align-items:center;gap:8px}
+.btn{padding:6px 12px;border-radius:6px;font-size:11px;font-weight:500;cursor:pointer;border:1px solid #d7deea;background:#eef2f7;color:#526177;transition:all .15s}
+.btn:hover{background:#d7deea;color:#0f172a}
+.btn-primary{background:#1d4ed8;border-color:#2563eb;color:#fff}
+.btn-primary:hover{background:#2563eb}
+.upload-zone{border:1.5px dashed #d7deea;border-radius:10px;padding:20px;text-align:center;cursor:pointer;transition:all .2s;background:#ffffff;margin:16px 20px}
+.upload-zone:hover{border-color:#3b82f6;background:rgba(59,130,246,.05)}
+.upload-zone i{font-size:28px;color:#5b6678;margin-bottom:8px}
+.upload-zone p{font-size:12px;color:#3f4a5c}
+.upload-zone .highlight{color:#60a5fa;font-weight:500}
+.section{padding:16px 20px}
+.section-title{font-size:13px;font-weight:600;color:#526177;margin-bottom:12px;display:flex;align-items:center;gap:6px}
+.section-title i{font-size:15px;color:#3b82f6}
+.kpi-grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(140px,1fr));gap:10px;margin-bottom:16px}
+.kpi{background:#ffffff;border:1px solid #d7deea;border-radius:10px;padding:12px 14px;position:relative;overflow:hidden;cursor:default;transition:border-color .15s}
+.kpi:hover{border-color:#7b8799}
+.kpi-label{font-size:10px;color:#5b6678;font-weight:500;letter-spacing:.3px;text-transform:uppercase;margin-bottom:6px}
+.kpi-value{font-size:20px;font-weight:700;color:#0f172a;letter-spacing:-.3px}
+.kpi-value.green{color:#34d399}
+.kpi-value.red{color:#f87171}
+.kpi-value.blue{color:#60a5fa}
+.kpi-value.amber{color:#fbbf24}
+.kpi-sub{font-size:10px;color:#5b6678;margin-top:3px}
+.kpi-icon{position:absolute;right:10px;top:10px;font-size:20px;opacity:.2}
+.filters{background:#ffffff;border:1px solid #d7deea;border-radius:10px;padding:12px 14px;margin-bottom:16px;display:flex;flex-wrap:wrap;gap:10px;align-items:center}
+.filter-group{display:flex;align-items:center;gap:6px}
+.filter-label{font-size:11px;color:#5b6678;white-space:nowrap}
+.filter-select{background:#f5f7fb;border:1px solid #d7deea;color:#526177;padding:4px 8px;border-radius:5px;font-size:11px;cursor:pointer}
+.quick-btns{display:flex;gap:4px}
+.qbtn{padding:4px 10px;border-radius:5px;font-size:11px;cursor:pointer;border:1px solid #d7deea;background:transparent;color:#3f4a5c;transition:all .15s}
+.qbtn:hover{background:#d7deea;color:#0f172a}
+.qbtn.active{background:#1d4ed8;border-color:#2563eb;color:#fff}
+.chart-card{background:#ffffff;border:1px solid #d7deea;border-radius:10px;padding:14px;margin-bottom:14px}
+.chart-title{font-size:12px;font-weight:600;color:#526177;margin-bottom:4px}
+.chart-sub{font-size:10px;color:#7b8799;margin-bottom:12px}
+.chart-wrap{position:relative;width:100%}
+.legend{display:flex;flex-wrap:wrap;gap:12px;margin-top:10px}
+.leg-item{display:flex;align-items:center;gap:5px;font-size:11px;color:#3f4a5c}
+.leg-dot{width:8px;height:8px;border-radius:50%}
+.tooltip-custom{position:absolute;background:#f5f7fb;border:1px solid #7b8799;border-radius:8px;padding:8px 10px;font-size:10px;pointer-events:none;z-index:100;min-width:200px;box-shadow:0 10px 28px rgba(15,23,42,.12)}
+.tt-head{font-weight:700;font-size:11px;color:#60a5fa;margin-bottom:5px;padding-bottom:4px;border-bottom:1px solid #d7deea}
+.tt-row{display:flex;justify-content:space-between;gap:12px;padding:2px 0;color:#526177;line-height:1.4}
+.tt-val{color:#0f172a;font-weight:500;text-align:right}
+.tt-vs{color:#34d399;font-weight:600}
+.tt-vs.neg{color:#f87171}
+.tt-indigo-advantage{margin-top:6px;padding:6px 8px;border-radius:6px;background:rgba(99,102,241,.12);border:1px solid rgba(129,140,248,.35);display:flex;align-items:center;gap:6px;}
+.tt-indigo-advantage.cheaper{background:rgba(52,211,153,.1);border-color:rgba(52,211,153,.35);}
+.tt-indigo-advantage.costlier{background:rgba(248,113,113,.1);border-color:rgba(248,113,113,.35);}
+.tt-adv-icon{font-size:14px;flex-shrink:0}
+.tt-adv-body{flex:1}
+.tt-adv-label{font-size:9px;color:#5b6678;font-weight:600;letter-spacing:.4px;text-transform:uppercase}
+.tt-adv-value{font-size:12px;font-weight:700;margin-top:1px}
+.tt-adv-value.cheaper{color:#34d399}
+.tt-adv-value.costlier{color:#f87171}
+.tt-adv-sub{font-size:9px;color:#7b8799;margin-top:1px}
+.insights-grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(200px,1fr));gap:10px;margin-bottom:14px}
+.insight{background:#ffffff;border:1px solid #d7deea;border-radius:10px;padding:12px 14px;border-left:3px solid}
+.insight.blue{border-left-color:#3b82f6}
+.insight.green{border-left-color:#34d399}
+.insight.amber{border-left-color:#f59e0b}
+.insight.red{border-left-color:#f87171}
+.insight.purple{border-left-color:#a78bfa}
+.insight-label{font-size:10px;color:#5b6678;text-transform:uppercase;letter-spacing:.5px;margin-bottom:4px}
+.insight-value{font-size:13px;font-weight:600;color:#0f172a}
+.insight-sub{font-size:10px;color:#5b6678;margin-top:2px}
+.table-wrap{background:#ffffff;border:1px solid #d7deea;border-radius:10px;overflow:hidden;margin-bottom:14px}
+.table-header{padding:12px 14px;display:flex;align-items:center;justify-content:space-between;border-bottom:1px solid #d7deea}
+.table-search{background:#f5f7fb;border:1px solid #d7deea;color:#526177;padding:5px 10px;border-radius:6px;font-size:11px;width:180px}
+table{width:100%;border-collapse:collapse}
+thead th{background:#f5f7fb;font-size:10px;font-weight:600;color:#5b6678;padding:8px 12px;text-align:left;border-bottom:1px solid #d7deea;cursor:pointer;white-space:nowrap;user-select:none}
+thead th:hover{color:#526177}
+tbody tr{border-bottom:1px solid rgba(148,163,184,.35);transition:background .1s}
+tbody tr:hover{background:rgba(148,163,184,.2)}
+tbody td{font-size:11px;color:#526177;padding:7px 12px;white-space:nowrap}
+.airline-badge{display:inline-flex;align-items:center;gap:4px;padding:2px 7px;border-radius:4px;font-size:10px;font-weight:600}
+.badge-6E{background:rgba(99,102,241,.15);color:#818cf8}
+.badge-AI{background:rgba(239,68,68,.15);color:#f87171}
+.badge-SG{background:rgba(234,179,8,.15);color:#eab308}
+.badge-QP{background:rgba(52,211,153,.15);color:#34d399}
+.vs-pill{padding:2px 6px;border-radius:3px;font-size:10px;font-weight:600}
+.vs-pos{background:rgba(52,211,153,.12);color:#34d399}
+.vs-neg{background:rgba(248,113,113,.12);color:#f87171}
+.vs-zero{background:rgba(148,163,184,.18);color:#3f4a5c}
+.indigo-adv-pill{padding:3px 8px;border-radius:4px;font-size:10px;font-weight:700;display:inline-flex;align-items:center;gap:3px}
+.indigo-adv-pill.cheaper{background:rgba(52,211,153,.12);color:#10b981}
+.indigo-adv-pill.costlier{background:rgba(248,113,113,.12);color:#f87171}
+.indigo-adv-pill.same{background:rgba(148,163,184,.15);color:#64748b}
+.pagination{display:flex;align-items:center;justify-content:space-between;padding:8px 14px;border-top:1px solid #d7deea;font-size:11px;color:#5b6678}
+.page-btns{display:flex;gap:4px}
+.page-btn{padding:3px 8px;border-radius:4px;border:1px solid #d7deea;background:transparent;color:#3f4a5c;cursor:pointer;font-size:10px}
+.page-btn:hover{background:#d7deea;color:#0f172a}
+.page-btn.active{background:#1d4ed8;border-color:#2563eb;color:#fff}
+.route-tag{display:inline-block;padding:2px 6px;background:rgba(96,165,250,.1);color:#60a5fa;border-radius:3px;font-size:10px;font-weight:600}
+.charts-row{display:grid;grid-template-columns:1fr 1fr;gap:14px;margin-bottom:14px}
+
+@media(max-width:900px){.charts-row{grid-template-columns:1fr}.sidebar{display:none}}
+</style>
+</head>
+<body>
+
+<h2 class="sr-only">Airline Pricing Intelligence Dashboard — DEL route fare trends and competitive analysis</h2>
+
+<div class="dash">
+<nav class="sidebar" aria-label="Main navigation">
+  <div class="logo">
+    <div class="logo-text">✈ FareIQ</div>
+    <div class="logo-sub">Pricing Intelligence</div>
+  </div>
+  <div class="nav-section">Analytics</div>
+  <div class="nav-item active" onclick="setNav(this)">📊 Dashboard</div>
+  <div class="nav-item" onclick="setNav(this)">📈 Price Trends</div>
+  <div class="nav-item" onclick="setNav(this)">🏆 Competitive</div>
+  <div class="nav-section">Routes</div>
+  <div class="nav-item" onclick="setNav(this)">🗺 Route Insights</div>
+  <div class="nav-item" onclick="setNav(this)">📄 Reports</div>
+  <div class="nav-section">Settings</div>
+  <div class="nav-item" onclick="setNav(this)">⚙ Preferences</div>
+</nav>
+
+<div class="main" role="main">
+  <div class="topbar">
+    <div>
+      <div class="topbar-left" id="page-title">Dashboard Overview</div>
+      <div class="topbar-sub" id="page-sub">DEL Routes — IndiGo Fare Intelligence</div>
+    </div>
+    <div class="topbar-right">
+      <span style="font-size:10px;color:#7b8799" id="last-updated">No data loaded</span>
+      <button class="btn btn-primary" onclick="syncLatestFareData()">Sync Latest</button>
+      <button class="btn" onclick="document.getElementById('xlsxFile').click()">⬆ Upload File</button>
+      <button class="btn" id="exportBtn" onclick="exportCSV()">⬇ Export</button>
+    </div>
+  </div>
+
+  <input type="file" id="xlsxFile" accept=".xlsx,.xls,.csv" style="display:none" onchange="handleFile(event)">
+
+  <div id="upload-area">
+    <div class="upload-zone" onclick="document.getElementById('xlsxFile').click()" role="button" tabindex="0">
+      <p style="font-size:28px;color:#5b6678;margin-bottom:8px">📂</p>
+      <p><span class="highlight">Waiting for real scraper data</span></p>
+      <p id="sync-message" style="margin-top:4px;font-size:10px">Start the backend and click Sync Latest, or upload an exported scraper file as a fallback.</p>
+    </div>
+    <div style="padding:0 20px 16px">
+      <button class="btn btn-primary" onclick="syncLatestFareData()" style="width:100%">Sync Latest Scraped Data</button>
+    </div>
+  </div>
+
+  <div id="dashboard" style="display:none">
+    <div class="section">
+
+
+      <div class="filters" role="region" aria-label="Filters">
+        <div class="filter-group">
+          <span class="filter-label">🗺 Route</span>
+          <select class="filter-select" id="routeFilter" onchange="applyFilters()"></select>
+        </div>
+        <div class="filter-group">
+          <span class="filter-label">✈ Airlines</span>
+          <select class="filter-select" id="airlineFilter" onchange="applyFilters()">
+            <option value="all">All Airlines</option>
+            <option value="6E">IndiGo (6E)</option>
+            <option value="AI">Air India (AI)</option>
+            <option value="SG">SpiceJet (SG)</option>
+            <option value="QP">Akasa Air (QP)</option>
+          </select>
+        </div>
+        <div class="filter-group">
+          <span class="filter-label">📅 Range</span>
+          <div class="quick-btns" role="group">
+            <button class="qbtn" onclick="setRange(7,this)">7D</button>
+            <button class="qbtn active" onclick="setRange(15,this)">15D</button>
+            <button class="qbtn" onclick="setRange(30,this)">30D</button>
+            <button class="qbtn" onclick="setRange(0,this)">All</button>
+          </div>
+        </div>
+        <div class="filter-group">
+          <span class="filter-label">From</span>
+          <input type="date" class="filter-select" id="dateFrom" onchange="setCustomRange()">
+          <span class="filter-label">To</span>
+          <input type="date" class="filter-select" id="dateTo" onchange="setCustomRange()">
+        </div>
+      </div>
+
+      <div class="kpi-grid" id="kpiGrid" role="region" aria-label="Key performance indicators"></div>
+
+      <div class="chart-card" role="region">
+        <div class="chart-title">Airline Fare Trend — Cheapest Total Fare by Date</div>
+        <div class="chart-sub" id="chartSub">Hover a line to see IndiGo's advantage vs that airline on the same date</div>
+        <div class="chart-wrap" style="height:280px;position:relative">
+          <canvas id="lineChart"></canvas>
+          <div class="tooltip-custom" id="chartTooltip" style="display:none;position:absolute"></div>
+        </div>
+        <div class="legend" id="lineChartLegend"></div>
+      </div>
+
+      <div class="charts-row">
+        <div class="chart-card">
+          <div class="chart-title">Average Fare by Airline</div>
+          <div class="chart-sub">Comparative pricing analysis</div>
+          <div class="chart-wrap" style="height:200px">
+            <canvas id="barChart"></canvas>
+          </div>
+        </div>
+        <div class="chart-card">
+          <div class="chart-title">Cheapest Airline Frequency</div>
+          <div class="chart-sub">How often each airline is cheapest</div>
+          <div class="chart-wrap" style="height:160px">
+            <canvas id="pieChart"></canvas>
+          </div>
+          <div class="legend" id="pieLegend" style="margin-top:8px"></div>
+        </div>
+      </div>
+
+      <div class="section-title">🧠 Pricing Intelligence Insights</div>
+      <div class="insights-grid" id="insightsGrid" role="region"></div>
+
+      <div class="table-wrap" role="region">
+        <div class="table-header">
+          <div style="font-size:12px;font-weight:600;color:#526177">Fare Data Table</div>
+          <div style="display:flex;gap:8px;align-items:center">
+            <input type="text" class="table-search" placeholder="Search route, airline..." id="tableSearch" oninput="renderTable()">
+            <button class="btn" onclick="exportCSV()">⬇ CSV</button>
+          </div>
+        </div>
+        <div style="overflow-x:auto">
+          <table>
+            <thead>
+              <tr>
+                <th onclick="sortTable('Route')">Route</th>
+                <th onclick="sortTable('Departure Date')">Date</th>
+                <th onclick="sortTable('Airline')">Airline</th>
+                <th onclick="sortTable('Code')">Code</th>
+                <th onclick="sortTable('Cheapest Total Fare')">Total Fare ↕</th>
+                <th onclick="sortTable('Base')">Base ↕</th>
+                <th onclick="sortTable('Taxes')">Taxes</th>
+                <th onclick="sortTable('Surcharge')">Surcharge</th>
+                <th onclick="sortTable('Flights')"># Flights</th>
+                <th onclick="sortTable('Min Seats')">Min Seats</th>
+                <th onclick="sortTable('Vs IndiGo')">vs Competitor</th>
+                <th onclick="sortTable('IndiGo Advantage')">✈ IndiGo Advantage</th>
+              </tr>
+            </thead>
+            <tbody id="tableBody"></tbody>
+          </table>
+        </div>
+        <div class="pagination">
+          <span id="paginationInfo">Showing 0–0 of 0 rows</span>
+          <div class="page-btns" id="pageBtns"></div>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+</div>
+
+<script src="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/4.4.1/chart.umd.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js"></script>
+<script>
+let allData=[], filteredData=[], sortCol='Departure Date', sortDir=1, curPage=1, pageSize=15;
+let lineChartInst=null, barChartInst=null, pieChartInst=null;
+let indigoFareLookup={};
+
+const AIRLINE_COLORS={'6E':'#818cf8','AI':'#f87171','SG':'#fbbf24','QP':'#34d399','IX':'#60a5fa','UK':'#a78bfa','default':'#526177'};
+const AIRLINE_NAMES={'6E':'IndiGo','AI':'Air India','SG':'SpiceJet','QP':'Akasa Air','IX':'Air India Exp','UK':'Vistara'};
+const INR_SYMBOL='\u20B9';
+const API_BASE_URL='http://localhost:8000/api';
+
+function parseExcelDate(v){if(!v) return null;if(v instanceof Date) return v;if(typeof v==='number'){const d=new Date((v-25569)*86400*1000);return d;}if(typeof v==='string'){const parts=v.split('/');if(parts.length===3) return new Date(parts[2],parts[1]-1,parts[0]);return new Date(v);}return null;}
+function fmtDate(d){if(!d) return '';const dt=parseExcelDate(d);if(!dt||isNaN(dt)) return String(d);return dt.toLocaleDateString('en-IN',{day:'2-digit',month:'short',year:'numeric'});}
+function toNumber(v){if(v===null||v===undefined||v==='') return 0;if(typeof v==='number') return Number.isFinite(v)?v:0;const n=Number(String(v).replace(/[^0-9.-]/g,''));return Number.isFinite(n)?n:0;}
+function pickValue(obj,keys){for(const key of keys){const value=obj[key];if(value!==undefined&&value!==null&&value!=='') return value;}const normalized={};Object.keys(obj).forEach(k=>{normalized[k.toLowerCase().replace(/\s+/g,'')]=obj[k];});for(const key of keys){const value=normalized[key.toLowerCase().replace(/\s+/g,'')];if(value!==undefined&&value!==null&&value!=='') return value;}return '';}
+
+function buildIndigoLookup(rows){
+  indigoFareLookup={};
+  rows.forEach(r=>{
+    const code=r['Code']||'';
+    if(code==='6E'){
+      const d=r['Departure Date'] instanceof Date?r['Departure Date']:parseExcelDate(r['Departure Date']);
+      if(!d||isNaN(d)) return;
+      const key=d.toISOString().split('T')[0]+'|'+(r['Route']||'');
+      const fare=toNumber(r['Cheapest Total Fare']);
+      if(!indigoFareLookup[key]||fare<indigoFareLookup[key]) indigoFareLookup[key]=fare;
+    }
+  });
+}
+
+function transformRowData(r,allRows){
+  const origin=pickValue(r,['Origin','origin','From','from','Source','source']);
+  const destination=pickValue(r,['Destination','destination','To','to','Dest','dest']);
+  const route=pickValue(r,['Route','route'])||(origin&&destination?(origin+'-'+destination):'DEL-BOM');
+  const departDate=pickValue(r,['Departure Date','Flight Date','Date','departure date','flight date','date','Departure','departure']);
+  const airline=pickValue(r,['Airline','airline','Airline Name','airline name']);
+  const code=pickValue(r,['Code','Airline Code','airline code','code','Airline_Code','airline_code','AirlineCode']);
+  const fare=toNumber(pickValue(r,['Cheapest Total Fare','Total Fare','Price','Fare','price','fare','Ticket Price','ticket price','TotalFare']));
+  const base=toNumber(pickValue(r,['Base','Base Fare','base','base fare','Base_Fare','base_fare','BaseFare']));
+  const taxes=toNumber(pickValue(r,['Taxes','Tax','taxes','tax','Tax_Amount','tax_amount','TaxAmount']));
+  const surcharge=toNumber(pickValue(r,['Surcharge','surcharge','Fuel Surcharge','fuel surcharge','YQ','FuelSurcharge']));
+  let flights=toNumber(pickValue(r,['Flights','# Flights','No. Flights','flights','Flights_Count','FlightsCount']));
+  if(!flights) flights=1;
+  let minSeats=toNumber(pickValue(r,['Min Seats','Minimum Seats','min seats','minimum seats','Min_Seats','MinSeats']));
+  if(!minSeats) minSeats=0;
+  let vsIndigo=0;
+  if(code!='6E'&&code!='IndiGo'&&fare>0){
+    const indigoFares=allRows.filter(x=>{const xCode=pickValue(x,['Code','Airline Code','code','Airline_Code','AirlineCode']);const xDate=String(pickValue(x,['Departure Date','Flight Date','date','Date']));return(xCode=='6E'||xCode=='IndiGo'||xCode=='indigo')&&xDate.substring(0,10)==String(departDate).substring(0,10);}).map(x=>toNumber(pickValue(x,['Cheapest Total Fare','Total Fare','Price','price','fare','TotalFare'])));
+    const avgIndigoFare=indigoFares.length?indigoFares.reduce((a,b)=>a+b,0)/indigoFares.length:0;
+    if(avgIndigoFare>0) vsIndigo=Math.round(fare-avgIndigoFare);
+  }
+  return{'Route':route,'Departure Date':parseExcelDate(departDate)||departDate,'Airline':airline||code||'Unknown','Code':code||'XX','Cheapest Total Fare':fare,'Base':base,'Taxes':taxes,'Surcharge':surcharge,'Flights':flights,'Min Seats':minSeats,'Vs IndiGo':vsIndigo};
+}
+
+function fmtINR(v){return INR_SYMBOL+Math.round(toNumber(v)).toLocaleString('en-IN');}
+
+function parseCSV(text){const rows=[];let row='';let insideQuotes=false;for(let i=0;i<text.length;i++){const char=text[i];const nextChar=text[i+1];if(char==='"'){if(insideQuotes&&nextChar==='"'){row+='\"';i++;}else{insideQuotes=!insideQuotes;}}else if(char==='\n'&&!insideQuotes){if(row.trim()){rows.push(row);}row='';}else if(char==='\r'){continue;}else{row+=char;}}if(row.trim()) rows.push(row);if(rows.length<2) return [];const headers=rows[0].split(',').map(h=>h.trim().replace(/^"|"$/g,''));const data=[];for(let i=1;i<rows.length;i++){const cells=[];let cell='';let inQuotes=false;for(let j=0;j<rows[i].length;j++){const c=rows[i][j];const next=rows[i][j+1];if(c==='"'){if(inQuotes&&next==='"'){cell+='\"';j++;}else{inQuotes=!inQuotes;}}else if(c===','&&!inQuotes){cells.push(cell.trim().replace(/^"|"$/g,''));cell='';}else{cell+=c;}}cells.push(cell.trim().replace(/^"|"$/g,''));const obj={};headers.forEach((h,idx)=>{obj[h]=cells[idx]||'';});data.push(obj);}return data;}
+
+function processFareRows(json,sourceLabel){
+  allData=json.map(r=>transformRowData(r,json)).filter(r=>r['Cheapest Total Fare']>0);
+  if(!allData.length){
+    const sample=json[0];
+    const cols=Object.keys(sample||{}).join(', ');
+    throw new Error('After processing, no valid fares found.\n\nColumns:\n'+cols+'\n\nFirst data row:\n'+JSON.stringify(sample));
+  }
+  buildIndigoLookup(allData);
+  allData.forEach(r=>{
+    if(r['Code']==='6E'){r['Vs IndiGo']=0;return;}
+    const d=r['Departure Date'] instanceof Date?r['Departure Date']:parseExcelDate(r['Departure Date']);
+    if(!d||isNaN(d)) return;
+    const key=d.toISOString().split('T')[0]+'|'+(r['Route']||'');
+    const indigoFare=indigoFareLookup[key]||0;
+    r['Vs IndiGo']=indigoFare>0?Math.round(r['Cheapest Total Fare']-indigoFare):0;
+  });
+  initDashboard(sourceLabel);
+}
+
+async function syncLatestFareData(){
+  const status=document.getElementById('last-updated');
+  const message=document.getElementById('sync-message');
+  status.textContent='Syncing latest scraped data...';
+  if(message) message.textContent='Reading latest Excel output from backend/outputs...';
+  try{
+    const res=await fetch(API_BASE_URL+'/fare-data/latest',{cache:'no-store'});
+    if(!res.ok){
+      let detail='No scraped data available yet.';
+      try{const err=await res.json();detail=err.detail||detail;}catch(_){}
+      throw new Error(detail);
+    }
+    const payload=await res.json();
+    processFareRows(payload.rows||[],payload.filename||'latest scraper output');
+    status.textContent=`Synced ${payload.record_count||allData.length} rows from ${payload.filename} at ${new Date(payload.updated_at).toLocaleString()}`;
+  }catch(err){
+    console.error('Sync error:',err);
+    status.textContent='Sync failed';
+    if(message) message.textContent=err.message+' Start the backend, run a scrape, then sync again.';
+  }
+}
+
+function handleFile(e){const f=e.target.files[0];if(!f) return;const fileName=f.name.toLowerCase();const isCSV=fileName.endsWith('.csv');const reader=new FileReader();reader.onload=ev=>{try{let json=[];if(isCSV){const csvText=ev.target.result;json=parseCSV(csvText);if(!json.length) throw new Error('CSV file is empty or has no valid data');}else{try{if(!window.XLSX) throw new Error('XLSX library not loaded');const wb=XLSX.read(ev.target.result,{type:'array',cellDates:true});if(!wb.SheetNames.length) throw new Error('No sheets found in Excel file');const ws=wb.Sheets[wb.SheetNames[0]];if(!ws) throw new Error('Cannot read worksheet');json=XLSX.utils.sheet_to_json(ws,{defval:''});if(!json.length) throw new Error('Excel file has no data rows');}catch(xlsxErr){throw new Error('Excel error: '+xlsxErr.message);}}processFareRows(json,f.name);document.getElementById('xlsxFile').value='';}catch(err){console.error('Upload error:',err);alert('✗ Upload Failed:\n\n'+err.message);}};reader.onerror=()=>{alert('✗ Error reading file. Try again.');};if(isCSV){reader.readAsText(f);}else{reader.readAsArrayBuffer(f);}}
+function initDashboard(sourceLabel){
+  document.getElementById('upload-area').style.display='none';
+  document.getElementById('dashboard').style.display='block';
+  document.getElementById('last-updated').textContent='Updated: '+new Date().toLocaleTimeString()+(sourceLabel?' · '+sourceLabel:'');
+  populateRouteFilter();
+  setRange(15,document.querySelector('.qbtn.active')||document.querySelectorAll('.qbtn')[1]);
+}
+
+function populateRouteFilter(){const sel=document.getElementById('routeFilter');const routes=[...new Set(allData.map(r=>r['Route']))].sort();sel.innerHTML='<option value="all">All Routes</option>'+routes.map(r=>`<option value="${r}">${r}</option>`).join('');}
+
+function setRange(days,btn){document.querySelectorAll('.qbtn').forEach(b=>b.classList.remove('active'));if(btn) btn.classList.add('active');if(days===0){filteredData=applyBaseFilters(allData);}else{const now=new Date();now.setHours(0,0,0,0);const end=new Date(now);end.setDate(end.getDate()+days);const all=allData.filter(r=>{const d=r['Departure Date'] instanceof Date?r['Departure Date']:parseExcelDate(r['Departure Date']);return d&&d>=now&&d<=end;});filteredData=applyBaseFilters(all.length?all:allData);}renderAll();}
+
+function setCustomRange(){const from=document.getElementById('dateFrom').value;const to=document.getElementById('dateTo').value;if(!from||!to) return;const fd=new Date(from),td=new Date(to);document.querySelectorAll('.qbtn').forEach(b=>b.classList.remove('active'));filteredData=applyBaseFilters(allData.filter(r=>{const d=r['Departure Date'] instanceof Date?r['Departure Date']:parseExcelDate(r['Departure Date']);return d&&d>=fd&&d<=td;}));renderAll();}
+
+function applyFilters(){filteredData=applyBaseFilters(allData);renderAll();}
+function applyBaseFilters(data){const route=document.getElementById('routeFilter').value;const airline=document.getElementById('airlineFilter').value;return data.filter(r=>(route==='all'||r['Route']===route)&&(airline==='all'||r['Code']===airline));}
+
+function renderAll(){renderKPIs();renderLineChart();renderBarChart();renderPieChart();renderInsights();renderTable();}
+
+function renderKPIs(){
+  const fares=filteredData.map(r=>r['Cheapest Total Fare']).filter(v=>v>0);
+  if(!fares.length) return;
+  const min=Math.min(...fares),max=Math.max(...fares),avg=fares.reduce((a,b)=>a+b,0)/fares.length;
+  const cheapestRow=filteredData.find(r=>r['Cheapest Total Fare']===min);
+  const expRow=filteredData.find(r=>r['Cheapest Total Fare']===max);
+  const vsCompRows=filteredData.filter(r=>r['Code']!=='6E');
+  const vsLive=vsCompRows.map(r=>{const d=r['Departure Date'] instanceof Date?r['Departure Date']:parseExcelDate(r['Departure Date']);if(!d||isNaN(d)) return null;const key=d.toISOString().split('T')[0]+'|'+(r['Route']||'');const iF=indigoFareLookup[key]||0;return iF>0?r['Cheapest Total Fare']-iF:null;}).filter(v=>v!==null);
+  const avgVs=vsLive.length?vsLive.reduce((a,b)=>a+b,0)/vsLive.length:0;
+  document.getElementById('kpiGrid').innerHTML=`
+    <div class="kpi"><div class="kpi-label">Lowest Fare</div><div class="kpi-value green">${fmtINR(min)}</div><div class="kpi-sub">${cheapestRow?AIRLINE_NAMES[cheapestRow['Code']]||cheapestRow['Airline']:''} · ${cheapestRow?fmtDate(cheapestRow['Departure Date']):''}</div></div>
+    <div class="kpi"><div class="kpi-label">Highest Fare</div><div class="kpi-value red">${fmtINR(max)}</div><div class="kpi-sub">${expRow?AIRLINE_NAMES[expRow['Code']]||expRow['Airline']:''} · ${expRow?fmtDate(expRow['Departure Date']):''}</div></div>
+    <div class="kpi"><div class="kpi-label">Average Fare</div><div class="kpi-value blue">${fmtINR(avg)}</div><div class="kpi-sub">Across ${fares.length} data points</div></div>
+    <div class="kpi"><div class="kpi-label">Data Points</div><div class="kpi-value amber">${filteredData.length}</div><div class="kpi-sub">${[...new Set(filteredData.map(r=>r['Route']))].length} routes · ${[...new Set(filteredData.map(r=>r['Code']))].length} airlines</div></div>
+    <div class="kpi"><div class="kpi-label">Cheapest Airline</div><div class="kpi-value green" style="font-size:14px">${AIRLINE_NAMES[cheapestRow&&cheapestRow['Code']]||''}</div><div class="kpi-sub">Min fare recorded</div></div>
+    <div class="kpi"><div class="kpi-label">IndiGo vs Others</div><div class="kpi-value ${avgVs>0?'green':'red'}">${avgVs>0?'Cheaper':'Costlier'}</div><div class="kpi-sub">${INR_SYMBOL}${Math.abs(Math.round(avgVs))} avg diff</div></div>`;
+}
+
+
+
+function getChartData(){const codes=[...new Set(filteredData.map(r=>r['Code']))].sort();const dates=[...new Set(filteredData.map(r=>{const d=r['Departure Date'] instanceof Date?r['Departure Date']:parseExcelDate(r['Departure Date']);return d?d.toISOString().split('T')[0]:null;}))].filter(Boolean).sort();return{codes,dates};}
+
+function renderLineChart(){
+  const{codes,dates}=getChartData();if(!dates.length) return;
+  const labels=dates.map(d=>{const dt=new Date(d);return dt.toLocaleDateString('en-IN',{day:'2-digit',month:'short'});});
+  const indigoPerDate={};
+  filteredData.filter(r=>r['Code']==='6E').forEach(r=>{
+    const d=r['Departure Date'] instanceof Date?r['Departure Date']:parseExcelDate(r['Departure Date']);
+    if(!d) return;
+    const key=d.toISOString().split('T')[0];
+    const fare=toNumber(r['Cheapest Total Fare']);
+    if(!indigoPerDate[key]||fare<indigoPerDate[key]) indigoPerDate[key]=fare;
+  });
+  const lowestFarePerDate={},highestFarePerDate={};
+  dates.forEach(d=>{const airlineFares={};codes.forEach(code=>{const rows=filteredData.filter(r=>{const dt=r['Departure Date'] instanceof Date?r['Departure Date']:parseExcelDate(r['Departure Date']);return r['Code']===code&&dt&&dt.toISOString().split('T')[0]===d;});if(rows.length){const cheapest=Math.min(...rows.map(r=>toNumber(r['Cheapest Total Fare'])).filter(f=>f>0));airlineFares[code]={fare:cheapest,name:AIRLINE_NAMES[code]||code};}});const validFares=Object.values(airlineFares).filter(f=>f.fare>0);if(validFares.length){const lowest=validFares.reduce((a,b)=>a.fare<b.fare?a:b);const highest=validFares.reduce((a,b)=>a.fare>b.fare?a:b);lowestFarePerDate[d]=lowest;highestFarePerDate[d]=highest;}else{lowestFarePerDate[d]={fare:0,name:''};highestFarePerDate[d]={fare:0,name:''};} });
+  const datasets=codes.map(code=>{
+    const col=AIRLINE_COLORS[code]||AIRLINE_COLORS.default;
+    const dataMap={};
+    filteredData.filter(r=>r['Code']===code).forEach(r=>{const d=r['Departure Date'] instanceof Date?r['Departure Date']:parseExcelDate(r['Departure Date']);if(d){const key=d.toISOString().split('T')[0];const fare=toNumber(r['Cheapest Total Fare']);if(!dataMap[key]||fare<dataMap[key].fare){dataMap[key]={fare,base:toNumber(r['Base']),taxes:toNumber(r['Taxes']),surcharge:toNumber(r['Surcharge']),vsIndigo:toNumber(r['Vs IndiGo'])};}}});
+    return{label:AIRLINE_NAMES[code]||code,data:dates.map(d=>dataMap[d]?dataMap[d].fare:null),baseData:dates.map(d=>dataMap[d]?dataMap[d].base:0),taxesData:dates.map(d=>dataMap[d]?dataMap[d].taxes:0),surchargeData:dates.map(d=>dataMap[d]?dataMap[d].surcharge:0),vsIndigoData:dates.map(d=>dataMap[d]?dataMap[d].vsIndigo:0),borderColor:col,backgroundColor:col+'22',tension:.35,spanGaps:true,pointRadius:4,pointHoverRadius:6,pointHitRadius:18,pointBackgroundColor:col,borderWidth:2,fill:false};
+  });
+  if(lineChartInst) lineChartInst.destroy();
+  const ctx=document.getElementById('lineChart');
+  lineChartInst=new Chart(ctx,{type:'line',data:{labels,datasets,dates,indigoPerDate},options:{responsive:true,maintainAspectRatio:false,interaction:{mode:'nearest',intersect:false},plugins:{legend:{display:false},tooltip:{enabled:false,external:(c)=>showCustomTooltip(c,lowestFarePerDate,highestFarePerDate,dates,indigoPerDate)}},scales:{x:{grid:{color:'rgba(148,163,184,.24)'},ticks:{color:'#5b6678',font:{size:10},maxRotation:45,autoSkip:true,maxTicksLimit:10}},y:{grid:{color:'rgba(148,163,184,.24)'},ticks:{color:'#5b6678',font:{size:10},callback:v=>INR_SYMBOL+Math.round(v).toLocaleString('en-IN')},beginAtZero:false}}}});
+  const legend=document.getElementById('lineChartLegend');
+  legend.innerHTML=datasets.map(ds=>`<span class="leg-item"><span class="leg-dot" style="background:${ds.borderColor}"></span>${ds.label}</span>`).join('');
+}
+
+function showCustomTooltip(ctx,lowestFarePerDate,highestFarePerDate,dates,indigoPerDate){
+  const tt=document.getElementById('chartTooltip');
+  const chart=ctx.chart;
+  const tooltip=ctx.tooltip;
+  if(!tooltip||tooltip.opacity===0){tt.style.display='none';return;}
+  const point=(tooltip.dataPoints||[]).find(dp=>dp.raw!==null&&dp.raw!==undefined);
+  if(!point){tt.style.display='none';return;}
+  const ds=chart.data.datasets[point.datasetIndex];
+  const idx=point.dataIndex;
+  const isoDate=dates[idx];
+  const base=toNumber(ds.baseData&&ds.baseData[idx]);
+  const taxes=toNumber(ds.taxesData&&ds.taxesData[idx]);
+  const surcharge=toNumber(ds.surchargeData&&ds.surchargeData[idx]);
+  const lowestData=lowestFarePerDate[isoDate]||{fare:0,name:''};
+  const highestData=highestFarePerDate[isoDate]||{fare:0,name:''};
+  const currentFare=toNumber(point.raw);
+  const fareDifference=currentFare-lowestData.fare;
+  const isIndiGo=ds.label.includes('IndiGo');
+  const indigoFare=indigoPerDate[isoDate]||0;
+  let html='';
+  html+=`<div class="tt-head" style="color:${ds.borderColor}">${ds.label}</div>`;
+  html+=`<div class="tt-row"><span>Date</span><span class="tt-val">${chart.data.labels[idx]}</span></div>`;
+  html+=`<div class="tt-row"><span>Fare</span><span class="tt-val">${fmtINR(currentFare)}</span></div>`;
+  html+=`<div class="tt-row"><span>Base</span><span class="tt-val">${fmtINR(base)}</span></div>`;
+  html+=`<div class="tt-row"><span>Tax</span><span class="tt-val">${fmtINR(taxes)}</span></div>`;
+  html+=`<div class="tt-row"><span>Surcharge</span><span class="tt-val">${fmtINR(surcharge)}</span></div>`;
+  html+=`<div class="tt-row" style="border-top:1px solid #d7deea;margin-top:4px;padding-top:4px"><span>Lowest</span><span class="tt-val" style="color:#34d399;font-weight:600"><div>${fmtINR(lowestData.fare)}</div><div style="font-size:8px;color:#5b6678;font-weight:400">${lowestData.name}</div></span></div>`;
+  html+=`<div class="tt-row"><span>Highest</span><span class="tt-val" style="color:#f87171;font-weight:600"><div>${fmtINR(highestData.fare)}</div><div style="font-size:8px;color:#5b6678;font-weight:400">${highestData.name}</div></span></div>`;
+  html+=`<div class="tt-row"><span>vs Lowest</span><span class="tt-val ${fareDifference>0?'tt-vs neg':'tt-vs'}">${fareDifference===0?'Best Price':fareDifference>0?'+'+fmtINR(fareDifference):fmtINR(fareDifference)}</span></div>`;
+  if(!isIndiGo&&indigoFare>0){
+    const diff=currentFare-indigoFare;
+    const cls=diff>0?'cheaper':'costlier';
+    const icon=diff>0?'✅':'⚠️';
+    const label=diff>0?`IndiGo is CHEAPER by ${fmtINR(diff)}`:`IndiGo is COSTLIER by ${fmtINR(Math.abs(diff))}`;
+    const sub=diff>0?`Passenger saves ${fmtINR(diff)} flying IndiGo`:`Competitor beats IndiGo by ${fmtINR(Math.abs(diff))}`;
+    html+=`<div class="tt-indigo-advantage ${cls}"><div class="tt-adv-icon">${icon}</div><div class="tt-adv-body"><div class="tt-adv-label">✈ IndiGo Advantage</div><div class="tt-adv-value ${cls}">${label}</div><div class="tt-adv-sub">${sub} · IndiGo: ${fmtINR(indigoFare)}</div></div></div>`;
+  } else if(isIndiGo){
+    // Find IndiGo's route for this exact date (use the lookup key to get route)
+    const indigoRow=filteredData.find(x=>{
+      if(x['Code']!=='6E') return false;
+      const xd=x['Departure Date'] instanceof Date?x['Departure Date']:parseExcelDate(x['Departure Date']);
+      return xd&&xd.toISOString().split('T')[0]===isoDate;
+    });
+    const indigoRoute=indigoRow?indigoRow['Route']:'';
+    // One entry per competitor airline — cheapest fare for that date + same route only
+    const compByCode={};
+    filteredData.forEach(r=>{
+      if(r['Code']==='6E') return;
+      const d=r['Departure Date'] instanceof Date?r['Departure Date']:parseExcelDate(r['Departure Date']);
+      if(!d||d.toISOString().split('T')[0]!==isoDate) return;
+      if(indigoRoute&&r['Route']!==indigoRoute) return;
+      const fare=toNumber(r['Cheapest Total Fare']);
+      if(!compByCode[r['Code']]||fare<compByCode[r['Code']]) compByCode[r['Code']]=fare;
+    });
+    const compEntries=Object.entries(compByCode);
+    if(compEntries.length){
+      let compHtml='<div class="tt-indigo-advantage cheaper" style="flex-direction:column;align-items:flex-start;gap:4px"><div class="tt-adv-label">✈ IndiGo vs Competitors</div>';
+      compEntries.forEach(([code,cFare])=>{
+        const saving=cFare-currentFare;
+        compHtml+=`<div style="display:flex;justify-content:space-between;width:100%;font-size:10px;padding:2px 0">
+          <span style="color:#526177">${AIRLINE_NAMES[code]||code} <span style="color:#7b8799;font-size:9px">${fmtINR(cFare)}</span></span>
+          <span style="font-weight:700;color:${saving>0?'#10b981':'#f87171'}">
+            ${saving>0?'✈ Cheaper by '+fmtINR(saving):'⚠ Costlier by '+fmtINR(Math.abs(saving))}
+          </span>
+        </div>`;
+      });
+      compHtml+='</div>';
+      html+=compHtml;
+    }
+  }
+  tt.innerHTML=html;
+  const canvasRect=chart.canvas.getBoundingClientRect();
+  const x=tooltip.caretX,y=tooltip.caretY;
+  const ttW=220;
+  tt.style.left=(x+ttW>canvasRect.width?x-ttW-10:x+12)+'px';
+  tt.style.top=Math.max(0,y-60)+'px';
+  tt.style.display='block';
+}
+
+function renderBarChart(){const codes=[...new Set(filteredData.map(r=>r['Code']))];const avgs=codes.map(c=>{const fares=filteredData.filter(r=>r['Code']===c).map(r=>r['Cheapest Total Fare']).filter(v=>v>0);return fares.length?Math.round(fares.reduce((a,b)=>a+b,0)/fares.length):0;});const colors=codes.map(c=>AIRLINE_COLORS[c]||AIRLINE_COLORS.default);if(barChartInst) barChartInst.destroy();barChartInst=new Chart(document.getElementById('barChart'),{type:'bar',data:{labels:codes.map(c=>AIRLINE_NAMES[c]||c),datasets:[{label:'Avg Fare',data:avgs,backgroundColor:colors.map(c=>c+'88'),borderColor:colors,borderWidth:1.5}]},options:{responsive:true,maintainAspectRatio:false,plugins:{legend:{display:false},tooltip:{callbacks:{label:c=>INR_SYMBOL+Math.round(c.raw).toLocaleString('en-IN')}}},scales:{x:{grid:{display:false},ticks:{color:'#5b6678',font:{size:10}}},y:{grid:{color:'rgba(148,163,184,.24)'},ticks:{color:'#5b6678',font:{size:10},callback:v=>INR_SYMBOL+Math.round(v/1000)+'k'}}}}});}
+
+function renderPieChart(){const counts={};const byDate={};filteredData.forEach(r=>{const d=r['Departure Date'] instanceof Date?r['Departure Date'].toISOString().split('T')[0]:String(r['Departure Date']).slice(0,10);const route=r['Route']||'';const key=d+'|'+route;if(!byDate[key]||r['Cheapest Total Fare']<byDate[key].fare) byDate[key]={fare:r['Cheapest Total Fare'],code:r['Code']};});Object.values(byDate).forEach(v=>{counts[v.code]=(counts[v.code]||0)+1;});const labels=Object.keys(counts).map(c=>AIRLINE_NAMES[c]||c);const data=Object.values(counts);const colors=Object.keys(counts).map(c=>AIRLINE_COLORS[c]||AIRLINE_COLORS.default);if(pieChartInst) pieChartInst.destroy();pieChartInst=new Chart(document.getElementById('pieChart'),{type:'doughnut',data:{labels,datasets:[{data,backgroundColor:colors.map(c=>c+'cc'),borderColor:colors,borderWidth:1.5,hoverOffset:8}]},options:{responsive:true,maintainAspectRatio:false,cutout:'60%',plugins:{legend:{display:false},tooltip:{callbacks:{label:c=>`${c.label}: ${c.raw} days (${Math.round(c.raw/data.reduce((a,b)=>a+b,0)*100)}%)`}}}}});const leg=document.getElementById('pieLegend');leg.innerHTML=labels.map((l,i)=>`<span class="leg-item"><span class="leg-dot" style="background:${colors[i]}"></span>${l} (${data[i]})</span>`).join('');}
+
+function renderInsights(){
+  const fares=filteredData.map(r=>r['Cheapest Total Fare']).filter(v=>v>0);if(!fares.length) return;
+  const min=Math.min(...fares);const cheapRow=filteredData.find(r=>r['Cheapest Total Fare']===min);
+  const byCode={};filteredData.forEach(r=>{if(!byCode[r['Code']]) byCode[r['Code']]={fares:[],count:0};byCode[r['Code']].fares.push(r['Cheapest Total Fare']);byCode[r['Code']].count++;});
+  const byDate={};filteredData.forEach(r=>{const d=fmtDate(r['Departure Date']);if(!byDate[d]) byDate[d]=[];byDate[d].push(r['Cheapest Total Fare']);});
+  const dateAvgs=Object.entries(byDate).map(([d,f])=>({d,avg:f.reduce((a,b)=>a+b,0)/f.length}));
+  const cheapestDate=dateAvgs.reduce((a,b)=>a.avg<b.avg?a:b,dateAvgs[0]||{d:'N/A',avg:0});
+  const expDate=dateAvgs.reduce((a,b)=>a.avg>b.avg?a:b,dateAvgs[0]||{d:'N/A',avg:0});
+  const btIndigoRows=filteredData.filter(r=>r['Code']!=='6E'&&r['Vs IndiGo']<0);
+  const mostBelowIndigoCode=Object.entries(btIndigoRows.reduce((a,r)=>{a[r['Code']]=(a[r['Code']]||0)+1;return a;},{})).sort((a,b)=>b[1]-a[1])[0];
+  const avgIndigoFare=byCode['6E']?byCode['6E'].fares.reduce((a,b)=>a+b,0)/byCode['6E'].fares.length:0;
+  const volatility=Object.entries(byCode).map(([c,v])=>{const a=v.fares.reduce((x,b)=>x+b,0)/v.fares.length;const sd=Math.sqrt(v.fares.reduce((x,b)=>x+(b-a)**2,0)/v.fares.length);return{c,sd};}).sort((a,b)=>b.sd-a.sd)[0];
+  document.getElementById('insightsGrid').innerHTML=`
+    <div class="insight blue"><div class="insight-label">⭐ Cheapest Fare Found</div><div class="insight-value">${fmtINR(min)} · ${AIRLINE_NAMES[cheapRow&&cheapRow['Code']]||''}</div><div class="insight-sub">${cheapRow?fmtDate(cheapRow['Departure Date']):''}</div></div>
+    <div class="insight green"><div class="insight-label">📅 Best Day to Travel</div><div class="insight-value">${cheapestDate.d}</div><div class="insight-sub">Avg fare ${fmtINR(cheapestDate.avg)}</div></div>
+    <div class="insight red"><div class="insight-label">📅 Most Expensive Date</div><div class="insight-value">${expDate.d}</div><div class="insight-sub">Avg fare ${fmtINR(expDate.avg)}</div></div>
+    <div class="insight amber"><div class="insight-label">🔥 Highest Fare Volatility</div><div class="insight-value">${volatility?AIRLINE_NAMES[volatility.c]||volatility.c:'N/A'}</div><div class="insight-sub">Std dev ₹${volatility?Math.round(volatility.sd).toLocaleString('en-IN'):'0'}</div></div>
+    <div class="insight purple"><div class="insight-label">🏆 Beats IndiGo Most</div><div class="insight-value">${mostBelowIndigoCode?AIRLINE_NAMES[mostBelowIndigoCode[0]]||mostBelowIndigoCode[0]:'IndiGo cheapest'}</div><div class="insight-sub">${mostBelowIndigoCode?mostBelowIndigoCode[1]+' dates cheaper':''}</div></div>
+    <div class="insight blue"><div class="insight-label">✈ IndiGo Avg Fare</div><div class="insight-value">${fmtINR(avgIndigoFare)}</div><div class="insight-sub">Benchmark for route</div></div>`;
+}
+
+function renderTable(){
+  const q=(document.getElementById('tableSearch').value||'').toLowerCase();
+  let rows=filteredData.filter(r=>!q||[r['Route'],r['Airline'],r['Code'],fmtDate(r['Departure Date'])].some(v=>String(v).toLowerCase().includes(q)));
+  rows=rows.map(r=>{
+    const d=r['Departure Date'] instanceof Date?r['Departure Date']:parseExcelDate(r['Departure Date']);
+    const key=d&&!isNaN(d)?d.toISOString().split('T')[0]+'|'+(r['Route']||''):'';
+    const indigoFare=indigoFareLookup[key]||0;
+    let indigoAdv=0;
+    if(r['Code']==='6E'||!indigoFare) indigoAdv=null;
+    else indigoAdv=toNumber(r['Cheapest Total Fare'])-indigoFare;
+    return{...r,'IndiGo Advantage':indigoAdv,'_indigoFare':indigoFare};
+  });
+  rows.sort((a,b)=>{let va=a[sortCol],vb=b[sortCol];if(va instanceof Date&&vb instanceof Date) return(va-vb)*sortDir;if(typeof va==='number'&&typeof vb==='number') return(va-vb)*sortDir;return String(va||'').localeCompare(String(vb||''))*sortDir;});
+  const total=rows.length;const pages=Math.ceil(total/pageSize);
+  if(curPage>pages) curPage=1;
+  const start=(curPage-1)*pageSize,end=Math.min(start+pageSize,total);
+  const page=rows.slice(start,end);
+  document.getElementById('paginationInfo').textContent=`Showing ${start+1}–${end} of ${total} rows`;
+  const pb=document.getElementById('pageBtns');pb.innerHTML='';
+  for(let i=1;i<=Math.min(pages,7);i++){const b=document.createElement('button');b.className='page-btn'+(i===curPage?' active':'');b.textContent=i;b.onclick=(()=>{const p=i;return()=>{curPage=p;renderTable();}})();pb.appendChild(b);}
+  const tbody=document.getElementById('tableBody');
+  tbody.innerHTML=page.map(r=>{
+    const vs=r['Vs IndiGo'];const vsClass=vs>0?'vs-pos':vs<0?'vs-neg':'vs-zero';const vsText=vs>0?'Cheaper than us':vs<0?'More expensive':'Same';
+    const code=r['Code']||'';const badgeClass='badge-'+code;
+    let advCell='<td>—</td>';
+    if(r['Code']==='6E'){
+      advCell='<td><span class="indigo-stat-label" style="font-size:10px;color:#818cf8;font-weight:600">◉ IndiGo</span></td>';
+    } else if(r['IndiGo Advantage']!==null&&r['_indigoFare']>0){
+      const adv=r['IndiGo Advantage'];
+      if(adv>0) advCell=`<td><span class="indigo-adv-pill cheaper">✈ Cheaper by ${fmtINR(adv)}</span></td>`;
+      else if(adv<0) advCell=`<td><span class="indigo-adv-pill costlier">⚠ Costlier by ${fmtINR(Math.abs(adv))}</span></td>`;
+      else advCell=`<td><span class="indigo-adv-pill same">= Same</span></td>`;
+    }
+    return`<tr>
+      <td><span class="route-tag">${r['Route']||''}</span></td>
+      <td>${fmtDate(r['Departure Date'])}</td>
+      <td>${r['Airline']||''}</td>
+      <td><span class="airline-badge ${badgeClass}">${code}</span></td>
+      <td style="font-weight:600;color:#0f172a">${fmtINR(r['Cheapest Total Fare'])}</td>
+      <td>${fmtINR(r['Base'])}</td>
+      <td>${fmtINR(r['Taxes'])}</td>
+      <td>${fmtINR(r['Surcharge'])}</td>
+      <td>${r['Flights']||0}</td>
+      <td>${r['Min Seats']||'-'}</td>
+      <td><span class="vs-pill ${vsClass}">${vsText}</span></td>
+      ${advCell}
+    </tr>`;
+  }).join('');
+}
+
+function sortTable(col){sortCol=col;sortDir*=-1;renderTable();}
+
+function exportCSV(){
+  const headers=['Route','Departure Date','Airline','Code','Cheapest Total Fare','Base','Taxes','Surcharge','Flights','Min Seats','Vs IndiGo','IndiGo Advantage'];
+  const rows=[headers.join(','),...filteredData.map(r=>{
+    const d=r['Departure Date'] instanceof Date?r['Departure Date']:parseExcelDate(r['Departure Date']);
+    const key=d&&!isNaN(d)?d.toISOString().split('T')[0]+'|'+(r['Route']||''):'';
+    const indigoFare=indigoFareLookup[key]||0;
+    const adv=r['Code']==='6E'?'IndiGo':(indigoFare?Math.round(toNumber(r['Cheapest Total Fare'])-indigoFare):'');
+    return[...headers.slice(0,-1).map(h=>h==='Departure Date'?fmtDate(r[h]):(r[h]||'')),adv].join(',');
+  })];
+  const blob=new Blob([rows.join('\n')],{type:'text/csv'});
+  const a=document.createElement('a');a.href=URL.createObjectURL(blob);a.download='fare_intelligence_indigo.csv';a.click();
+}
+
+function setNav(el){document.querySelectorAll('.nav-item').forEach(n=>n.classList.remove('active'));el.classList.add('active');document.getElementById('page-title').textContent=el.textContent.trim();}
+
+syncLatestFareData();
+</script>
+</body>
+</html>
