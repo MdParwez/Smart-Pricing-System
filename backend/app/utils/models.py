@@ -50,3 +50,30 @@ class ExcelExportResponse(BaseModel):
     url: str
     created_at: datetime
     record_count: int
+
+class MultiAirlineScrapeRequest(BaseModel):
+    """Request for scraping multiple airlines and competitors"""
+    reportName: str
+    reportDescription: Optional[str] = None
+    userNotes: Optional[str] = None
+    airline: str  # "Ryanair", "Lufthansa", etc.
+    origin: str  # e.g., "DUB", "FRA"
+    destination: str  # e.g., "LHR", "SAN"
+    startDate: str  # Format: "2026-06-01"
+    endDate: Optional[str] = None  # Format: "2026-06-15", defaults to startDate
+    numPassengers: int = 1
+    includeCompetitors: bool = True  # Include competitor airlines
+    currency: str = "EUR"
+    channel: str = "playwright"
+
+class MultiAirlineScrapingStatus(BaseModel):
+    """Status of multi-airline scraping task"""
+    task_id: str
+    status: str  # "running", "completed", "failed"
+    progress: int  # 0-100
+    records_count: int
+    airlines_scraped: List[str] = Field(default_factory=list)
+    started_at: datetime
+    completed_at: Optional[datetime] = None
+    error_message: Optional[str] = None
+    output_file: Optional[str] = None

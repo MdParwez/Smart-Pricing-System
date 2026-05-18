@@ -287,10 +287,11 @@ let allData=[], filteredData=[], sortCol='Departure Date', sortDir=1, curPage=1,
 let lineChartInst=null, barChartInst=null, pieChartInst=null;
 let indigoFareLookup={};
 
-const AIRLINE_COLORS={'6E':'#4338ca','AI':'#dc2626','SG':'#d97706','QP':'#059669','IX':'#0284c7','UK':'#7c3aed','default':'#334155'};
-const AIRLINE_NAMES={'6E':'IndiGo','AI':'Air India','SG':'SpiceJet','QP':'Akasa Air','IX':'Air India Exp','UK':'Vistara'};
+const AIRLINE_COLORS={'6E':'#4338ca','AI':'#dc2626','SG':'#d97706','QP':'#059669','IX':'#0284c7','UK':'#7c3aed','FR':'#0f766e','LH':'#1d4ed8','U2':'#ea580c','W6':'#7e22ce','default':'#334155'};
+const AIRLINE_NAMES={'6E':'IndiGo','AI':'Air India','SG':'SpiceJet','QP':'Akasa Air','IX':'Air India Exp','UK':'Vistara','FR':'Ryanair','LH':'Lufthansa','U2':'Easyjet','W6':'Wizz Air'};
 const INR_SYMBOL='\u20B9';
 const API_BASE_URL='http://localhost:8000/api';
+let currencySymbol=INR_SYMBOL;
 
 function parseExcelDate(v){if(!v) return null;if(v instanceof Date) return v;if(typeof v==='number'){const d=new Date((v-25569)*86400*1000);return d;}if(typeof v==='string'){const parts=v.split('/');if(parts.length===3) return new Date(parts[2],parts[1]-1,parts[0]);return new Date(v);}return null;}
 function fmtDate(d){if(!d) return '';const dt=parseExcelDate(d);if(!dt||isNaN(dt)) return String(d);return dt.toLocaleDateString('en-IN',{day:'2-digit',month:'short',year:'numeric'});}
@@ -318,8 +319,16 @@ function transformRowData(r,allRows){
   const route=pickValue(r,['Route','route'])||(origin&&destination?(origin+'-'+destination):'DEL-BOM');
   const departDate=pickValue(r,['Departure Date','Flight Date','Date','departure date','flight date','date','Departure','departure']);
   const airline=pickValue(r,['Airline','airline','Airline Name','airline name']);
-  const code=pickValue(r,['Code','Airline Code','airline code','code','Airline_Code','airline_code','AirlineCode']);
+  let code=pickValue(r,['Code','Airline Code','airline code','code','Airline_Code','airline_code','AirlineCode']);
+  if(!code){
+    const airlineKey=String(airline||'').toLowerCase();
+    if(airlineKey.includes('ryanair')) code='FR';
+    else if(airlineKey.includes('lufthansa')) code='LH';
+    else if(airlineKey.includes('easyjet')) code='U2';
+    else if(airlineKey.includes('wizz')) code='W6';
+  }
   const fare=toNumber(pickValue(r,['Cheapest Total Fare','Total Fare','Price','Fare','price','fare','Ticket Price','ticket price','TotalFare']));
+  const currency=pickValue(r,['Currency','currency']) || 'INR';
   const base=toNumber(pickValue(r,['Base','Base Fare','base','base fare','Base_Fare','base_fare','BaseFare']));
   const taxes=toNumber(pickValue(r,['Taxes','Tax','taxes','tax','Tax_Amount','tax_amount','TaxAmount']));
   const surcharge=toNumber(pickValue(r,['Surcharge','surcharge','Fuel Surcharge','fuel surcharge','YQ','FuelSurcharge']));
@@ -333,15 +342,17 @@ function transformRowData(r,allRows){
     const avgIndigoFare=indigoFares.length?indigoFares.reduce((a,b)=>a+b,0)/indigoFares.length:0;
     if(avgIndigoFare>0) vsIndigo=Math.round(fare-avgIndigoFare);
   }
-  return{'Route':route,'Departure Date':parseExcelDate(departDate)||departDate,'Airline':airline||code||'Unknown','Code':code||'XX','Cheapest Total Fare':fare,'Base':base,'Taxes':taxes,'Surcharge':surcharge,'Flights':flights,'Min Seats':minSeats,'Vs IndiGo':vsIndigo};
+  return{'Route':route,'Departure Date':parseExcelDate(departDate)||departDate,'Airline':airline||code||'Unknown','Code':code||'XX','Cheapest Total Fare':fare,'Currency':currency,'Base':base,'Taxes':taxes,'Surcharge':surcharge,'Flights':flights,'Min Seats':minSeats,'Vs IndiGo':vsIndigo};
 }
 
-function fmtINR(v){return INR_SYMBOL+Math.round(toNumber(v)).toLocaleString('en-IN');}
+function fmtINR(v){return currencySymbol+Math.round(toNumber(v)).toLocaleString('en-IN');}
 
 function parseCSV(text){const rows=[];let row='';let insideQuotes=false;for(let i=0;i<text.length;i++){const char=text[i];const nextChar=text[i+1];if(char==='"'){if(insideQuotes&&nextChar==='"'){row+='\"';i++;}else{insideQuotes=!insideQuotes;}}else if(char==='\n'&&!insideQuotes){if(row.trim()){rows.push(row);}row='';}else if(char==='\r'){continue;}else{row+=char;}}if(row.trim()) rows.push(row);if(rows.length<2) return [];const headers=rows[0].split(',').map(h=>h.trim().replace(/^"|"$/g,''));const data=[];for(let i=1;i<rows.length;i++){const cells=[];let cell='';let inQuotes=false;for(let j=0;j<rows[i].length;j++){const c=rows[i][j];const next=rows[i][j+1];if(c==='"'){if(inQuotes&&next==='"'){cell+='\"';j++;}else{inQuotes=!inQuotes;}}else if(c===','&&!inQuotes){cells.push(cell.trim().replace(/^"|"$/g,''));cell='';}else{cell+=c;}}cells.push(cell.trim().replace(/^"|"$/g,''));const obj={};headers.forEach((h,idx)=>{obj[h]=cells[idx]||'';});data.push(obj);}return data;}
 
 function processFareRows(json,sourceLabel){
   allData=json.map(r=>transformRowData(r,json)).filter(r=>r['Cheapest Total Fare']>0);
+  const firstCurrency=(allData.find(r=>r.Currency)||{}).Currency;
+  currencySymbol=firstCurrency==='EUR'?'€':firstCurrency==='USD'?'$':firstCurrency==='GBP'?'£':INR_SYMBOL;
   if(!allData.length){
     const sample=json[0];
     const cols=Object.keys(sample||{}).join(', ');
@@ -365,7 +376,10 @@ async function syncLatestFareData(){
   status.textContent='Syncing latest scraped data...';
   if(message) message.textContent='Reading latest Excel output from backend/outputs...';
   try{
-    const res=await fetch(API_BASE_URL+'/fare-data/latest',{cache:'no-store'});
+    const params=new URLSearchParams(window.location.search);
+    const file=params.get('file');
+    const endpoint=file?API_BASE_URL+'/fare-data/'+encodeURIComponent(file):API_BASE_URL+'/fare-data/latest';
+    const res=await fetch(endpoint,{cache:'no-store'});
     if(!res.ok){
       let detail='No scraped data available yet.';
       try{const err=await res.json();detail=err.detail||detail;}catch(_){}

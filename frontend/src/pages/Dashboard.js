@@ -166,9 +166,14 @@ export default function Dashboard() {
       <Paper elevation={3} sx={{ p: 4 }}>
         <Box sx={{ display: 'flex', justifyContent: 'space-between', gap: 2, alignItems: 'center', mb: 4 }}>
           <h1 style={{ margin: 0, color: '#333' }}>Flight Fare Intelligence Dashboard</h1>
-          <Button variant="outlined" href="/fare_intelligence.html">
-            Open Visualization
-          </Button>
+          <Box sx={{ display: 'flex', gap: 1, flexWrap: 'wrap', justifyContent: 'flex-end' }}>
+            <Button variant="outlined" href="/multi-airline">
+              Multi-Airline Scraper
+            </Button>
+            <Button variant="outlined" href="/fare_intelligence.html">
+              Open Visualization
+            </Button>
+          </Box>
         </Box>
 
         <Stepper activeStep={activeStep} sx={{ mb: 4 }}>

@@ -3,6 +3,7 @@ import { BrowserRouter as Router, Routes, Route } from 'react-router-dom';
 import { ThemeProvider, createTheme } from '@mui/material/styles';
 import CssBaseline from '@mui/material/CssBaseline';
 import Dashboard from './pages/Dashboard';
+import MultiAirlineDashboard from './components/MultiAirlineDashboard';
 
 const theme = createTheme({
   palette: {
@@ -45,6 +46,7 @@ function App() {
       <Router>
         <Routes>
           <Route path="/" element={<Dashboard />} />
+          <Route path="/multi-airline" element={<MultiAirlineDashboard />} />
         </Routes>
       </Router>
     </ThemeProvider>

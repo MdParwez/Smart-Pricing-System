@@ -36,6 +36,33 @@ export const scraperService = {
     const response = await client.get('/scraping-history');
     return response.data;
   },
+
+  listAirlines: async () => {
+    const response = await client.get('/airlines/list');
+    return response.data;
+  },
+
+  getAirlineConfig: async (airlineName) => {
+    const response = await client.get(`/airlines/config/${encodeURIComponent(airlineName)}`);
+    return response.data;
+  },
+
+  startMultiAirlineScrape: async (formData) => {
+    const response = await client.post('/start-multi-airline-scrape', formData);
+    return response.data;
+  },
+
+  getTaskFlights: async (taskId) => {
+    const response = await client.get(`/flights/history/${taskId}`);
+    return response.data;
+  },
+
+  getFlightStats: async (origin, destination) => {
+    const response = await client.get(
+      `/flights/stats/${encodeURIComponent(origin)}/${encodeURIComponent(destination)}`
+    );
+    return response.data;
+  },
 };
 
 export default client;
